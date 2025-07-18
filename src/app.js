@@ -1,22 +1,35 @@
 const express = require("express");
-const { adminAuth } = require("./middlewares/auth");
-
+const connectDB = require("./config/database");
 const app = express();
+const User = require("./models/user");
 
-app.use("/admin", adminAuth);
+app.post("/signup",async(req,res)=>{
+    //Creating a new Instance of the User model
+    const user = new User({
+        firstName:"Prerna",
+        lastName:"Gour",
+        emailId:"Prernagour2904@gmail.com",
+        password:"Prerna@2904",
+    })
 
-app.get("/admin/getAllData", (req, res) => {
-    res.send("Get All Data");
-});
+   try{
+     await user.save();
+     res.send("Data Added Sucesfully");
+   }
+   catch{
+    res.send(400).send("API Not Working");
+   }
+})
 
-app.get("/admin/getAll", (req, res) => {
-    res.send("Get All route is working");
-});
+connectDB()
+    .then(() => {
+        console.log("Database Connected");
+        app.listen(3000, () => {
+            console.log("Server is Successfully Listening");
+        });
+    })
+    .catch((err) => {
+        console.error("Database Not Connected", err);
+    });
 
-app.get("/user", (req, res) => {
-    res.send("Yes Working 1");
-});
 
-app.listen(3000, () => {
-    console.log("Server is Successfully Listening");
-});
