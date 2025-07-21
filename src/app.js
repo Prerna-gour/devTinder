@@ -2,22 +2,56 @@ const express = require("express");
 const connectDB = require("./config/database");
 const app = express();
 const User = require("./models/user");
-const user = require("./models/user");
+const bcrpty = require("bcrypt");
+const { validateSignUpData } = require("./utils/validation");
 
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
-    //Creating a new Instance of the User model
-    const user = new User(req.body)
-
     try {
+        //Validation of Data
+        validateSignUpData(req);
+
+        const { firstName, lastName, emailId, password } = req.body;
+        //Encrypt Password
+        const passwordHash = await bcrpty.hash(password, 10);
+        console.log(passwordHash);
+
+        //Creating a new Instance of the User model
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: passwordHash
+        })
         await user.save();
         res.send("Data Added Sucesfully");
     }
-    catch {
-        res.send(400).send("API Not Working");
+    catch (err) {
+        res.status(400).send("SignUp API Not Working: " + err.message);
     }
 });
+
+app.post("/login", async (req, res) => {
+    try {
+        const { emailId, password } = req.body;
+
+        const user = await User.findOne({ emailId: emailId });
+        if (!user) {
+            throw new Error("Invalid Credentails");
+        }
+        const isPasswodValid = await bcrpty.compare(password, user.password);
+
+        if (isPasswodValid) {
+            res.send("Login Successfull");
+        }
+        else {
+            throw new Error("Invalid Credentails");
+        }
+    } catch (err) {
+        res.status(400).send("Not Loggin " + err.message);
+    }
+})
 
 app.get("/user", async (req, res) => {
     const userEmail = req.body.emailId;
@@ -53,15 +87,15 @@ app.delete("/user", async (req, res) => {
     }
 });
 
-app.patch("/user", async(req,res)=>{
+app.patch("/user", async (req, res) => {
     const userId = req.body.userId;
     const data = req.body;
-    try{
-        await User.findByIdAndUpdate(userId, data,{runValidators:true});
+    try {
+        await User.findByIdAndUpdate(userId, data, { runValidators: true });
         res.send("User Updated");
     }
-    catch(err){
-        res.status(400).send("Something Went Wrong"+ err);
+    catch (err) {
+        res.status(400).send("Something Went Wrong" + err);
     }
 });
 
