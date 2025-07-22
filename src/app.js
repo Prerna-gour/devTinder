@@ -3,9 +3,13 @@ const connectDB = require("./config/database");
 const app = express();
 const User = require("./models/user");
 const bcrpty = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const {userAuth} = require("./middlewares/auth");
 const { validateSignUpData } = require("./utils/validation");
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
     try {
@@ -43,6 +47,9 @@ app.post("/login", async (req, res) => {
         const isPasswodValid = await bcrpty.compare(password, user.password);
 
         if (isPasswodValid) {
+
+            const token = await jwt.sign({_id :user._id},"Secret@Key");
+            res.cookie("token",token);
             res.send("Login Successfull");
         }
         else {
@@ -51,6 +58,22 @@ app.post("/login", async (req, res) => {
     } catch (err) {
         res.status(400).send("Not Loggin " + err.message);
     }
+})
+
+app.get("/profile", userAuth , async (req,res)=>{
+   try{
+    console.log("working");
+    const user = req.user;
+    res.send(user);
+   }
+   catch(err){
+    res.status(400).send("Error " + err.message);
+   }
+})
+
+app.post("/sendConnectionRequest",userAuth, async (req,res)=>{
+    const user = req.user;
+    res.send("Connection Request Sent by " + user.firstName);
 })
 
 app.get("/user", async (req, res) => {
