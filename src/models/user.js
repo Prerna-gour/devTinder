@@ -1,9 +1,11 @@
 const mongoose = require("mongoose");
 const validator  = require("validator");
+const jwt = require("jsonwebtoken");
 
 const userSchema = new mongoose.Schema({
     firstName: {
         type: String,
+        index: true,
         required: true
     },
     lastName: {
@@ -12,6 +14,7 @@ const userSchema = new mongoose.Schema({
     emailId: { 
         type: String,
         required: true,
+        //for unique mongo create it indexed automatically
         unique: true,
         trim: true,
         validate(value){
@@ -62,12 +65,12 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// userSchema.methods.getJWT = async function(){
-//     const user = this;
-//     const token = await jwt.sign({_id :user._id},"Secret@Key");
+userSchema.methods.getJWT = async function(){
+    const user = this;
+    const token = await jwt.sign({_id :user._id},"Secret@Key");
 
-//     return token;
-// }
+    return token;
+}
 //(Name of model, schema);
 
 module.exports = mongoose.model("User", userSchema);
